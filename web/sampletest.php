@@ -325,6 +325,12 @@ for($i = 0; $i < count($toto_all_result); $i++) {
     }
 }
 
+/*totoGOADL2の結果格納*/
+/*
+   今週金曜日発表なので、土曜日記述する
+ * 
+ *  */
+
 echo "<br /><br />";
 
 foreach ($toto_goal3_result as $value){
@@ -343,7 +349,7 @@ $goal3_result = array_filter($goal3_result,"strlen");
 $goal3_result = array_values($goal3_result);
 
 //結果を配列で格納
-var_dump($goal3_result);
+//var_dump($goal3_result);
 
 /*toto totominiA totominiB totoGoal3 の場合
 　現在使用していない
@@ -431,9 +437,108 @@ var_dump($html);
 
 /*
  * チーム情報
- * 
+ *  J1とJ2チームのリーグ情報を取得
  *  */
 
+
+$j1_ranking =array();           //J1ランキング情報取得配列の初期化
+$j1_ranking_koumoku = array();  //J1ランキング情報の項目格納配列の初期化
+
+/*J1ランキングを取得*/
+//J1チーム情報取得URL
+define('J1_RANKING', 'http://www.jsgoal.jp/ranking/j1.html');
+
+//Goutteオブジェクト生成
+$client = new Client();
+
+//J1ランキングのHTMLを取得
+$crawler_J1_rank = $client->request('GET', J1_RANKING);
+
+//項目を取得
+$crawler_J1_rank->filter('#rankingArea table th')->each(function($node) use(&$j1_ranking_koumoku)
+{
+        if($node->text() !== NULL && $node->text() !== ""){
+            //echo (string)$node->text() . "<br />";
+            //var_dump($node->text());
+            $j1_ranking_koumoku[] =(string)$node->text();
+        }
+            
+});
+
+var_dump($j1_ranking_koumoku);
+
+//順位表の取得
+$crawler_J1_rank->filter('#rankingArea table tr td')->each(function($node) use(&$j1_ranking)
+{
+        if($node->text() !== NULL && $node->text() != ""){
+            echo (string)$node->text() . "<br />";
+            //var_dump($node->text());
+            $j1_ranking[] =(string)$node->text();
+        }
+            
+});
+
+//var_dump($j1_ranking);
+
+/*順位表を分割して格納*/
+$j1_rank = array(); //リーグ順位順にチーム情報を格納
+
+//順位表を格納
+for($i = 0; $i < count($j1_ranking); $i++) {
+    if(preg_match('/^[^\x01-\x7E]+/', $j1_ranking[$i])){
+        //チーム名を発見した場合、配列から情報を抜き出す
+        $j1_rank[$i][] = array_slice($j1_ranking, $i, 9);
+    }
+}
+
+//J2チーム情報取得URL
+define('J2_RANKING', 'http://www.jsgoal.jp/ranking/j2.html');
+
+$j2_ranking = array();  //J2ランキング格納用変数
+
+//Goutteオブジェクト生成
+$client = new Client();
+
+//J2ランキングのHTMLを取得
+$crawler_J2_rank = $client->request('GET', J2_RANKING);
+
+//順位表の取得
+$crawler_J2_rank->filter('#rankingArea table tr td')->each(function($node) use(&$j2_ranking)
+{
+        if($node->text() !== NULL && $node->text() != ""){
+            echo (string)$node->text() . "<br />";
+            //var_dump($node->text());
+            $j2_ranking[] =(string)$node->text();
+        }
+            
+});
+
+//var_dump($j1_ranking);
+
+/*順位表を分割して格納(J2)*/
+$j2_rank = array(); //リーグ順位順にチーム情報を格納
+
+//順位表を格納
+for($i = 0; $i < count($j2_ranking); $i++) {
+    if(preg_match('/^[^\x01-\x7E]+/', $j2_ranking[$i])){
+        //チーム名を発見した場合、配列から情報を抜き出す
+        $j2_rank[$i][] = array_slice($j2_ranking, $i, 9);
+    }
+}
+
+
+/* 確認用コード */
+/*
+foreach ($j2_rank as $value){
+    var_dump($value);
+    echo "<br />";
+}
+ */
+
+/*
+   最近の試合状況
+ * 
+ *  */
 
 
 /*
@@ -441,7 +546,13 @@ var_dump($html);
  * 
  *  */
 
+/*得点ランキング*/
+//J1得点ランキング情報取得URL
+define('J1_GOAL_RANKING', 'http://www.jsgoal.jp/goalrank/j1.html');
 
+/*出場停止情報**/
+//J1得点ランキング情報取得URL
+define('J1_SUSPENSION', 'http://www.jsgoal.jp/suspension/j1.html');
 
 ?>
 <!--

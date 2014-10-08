@@ -465,13 +465,13 @@ $crawler_J1_rank->filter('#rankingArea table th')->each(function($node) use(&$j1
             
 });
 
-var_dump($j1_ranking_koumoku);
+//var_dump($j1_ranking_koumoku);
 
 //順位表の取得
 $crawler_J1_rank->filter('#rankingArea table tr td')->each(function($node) use(&$j1_ranking)
 {
         if($node->text() !== NULL && $node->text() != ""){
-            echo (string)$node->text() . "<br />";
+            //echo (string)$node->text() . "<br />";
             //var_dump($node->text());
             $j1_ranking[] =(string)$node->text();
         }
@@ -491,6 +491,14 @@ for($i = 0; $i < count($j1_ranking); $i++) {
     }
 }
 
+/*
+ *  DBへ情報を登録
+ * 
+ *  */
+
+
+
+
 //J2チーム情報取得URL
 define('J2_RANKING', 'http://www.jsgoal.jp/ranking/j2.html');
 
@@ -506,7 +514,7 @@ $crawler_J2_rank = $client->request('GET', J2_RANKING);
 $crawler_J2_rank->filter('#rankingArea table tr td')->each(function($node) use(&$j2_ranking)
 {
         if($node->text() !== NULL && $node->text() != ""){
-            echo (string)$node->text() . "<br />";
+            //echo (string)$node->text() . "<br />";
             //var_dump($node->text());
             $j2_ranking[] =(string)$node->text();
         }
@@ -539,6 +547,60 @@ foreach ($j2_rank as $value){
    最近の試合状況
  * 
  *  */
+/*全体の取得*/
+//今年度の試合結果の情報取得URL
+define('RECENTLY_ALL', 'http://www.jsgoal.jp/schedule/2014/j1.html');
+
+$recently_all = array();        //今年度の試合結果を全て格納
+$temp_home_array =  array();     //
+$temp_away_array = array();     //
+$temp_score_array = array();    //
+
+//Goutteオブジェクト生成
+$client = new Client();
+
+//今年度試合結果のHTMLを取得
+$crawler_recently_all = $client->request('GET', RECENTLY_ALL);
+
+//ホームチームの取得
+$crawler_recently_all->filter('#scheduletable td:nth-child(2)')->each(function($node) use(&$temp_home_array)
+{
+        if($node->text() !== NULL && $node->text() != ""){
+            //echo (string)$node->text() . "<br />";
+            //var_dump($node->text());
+            $temp_home_array[] =(string)$node->text();
+        }
+            
+});
+
+//アウェイチームの取得
+$crawler_recently_all->filter('#scheduletable td:nth-child(4)')->each(function($node) use(&$temp_away_array)
+{
+        if($node->text() !== NULL && $node->text() != ""){
+            //echo (string)$node->text() . "<br />";
+            //var_dump($node->text());
+            $temp_away_array[] =(string)$node->text();
+        }
+            
+});
+
+//スコアの取得
+$crawler_recently_all->filter('#scheduletable td:nth-child(3)')->each(function($node) use(&$recently_all)
+{
+        if($node->text() !== NULL && $node->text() != ""){
+            //echo (string)$node->text() . "<br />";
+            //var_dump($node->text());
+            $temp_score_array[] =(string)$node->text();
+        }
+            
+});
+
+
+
+/**各チームサイトから個別に取得**/
+
+/*セレッソ大阪*/
+define('RECENTLY_SELLESO', 'http://www.jsgoal.jp/schedule/2014/j1.html');
 
 
 /*
@@ -548,10 +610,62 @@ foreach ($j2_rank as $value){
 
 /*得点ランキング*/
 //J1得点ランキング情報取得URL
+//取得元１　http://www.jsgoal.jp/goalrank/j1.html
+//取得元２  http://www.football-lab.jp/summary/player_ranking/j1/?year=2014
 define('J1_GOAL_RANKING', 'http://www.jsgoal.jp/goalrank/j1.html');
 
+$j1_goal_ranking = array(); //ゴールランキング格納用
+
+/*アシストランキング ゴールランキング取得
+　　取得元２より取得
+ *  */
+define('J1_ASSIST_RANKING','http://www.football-lab.jp/summary/player_ranking/j1/?year=2014');
+
+$j1_assist_ranking = array();   //アシストランキング格納用
+
+//Goutteオブジェクト生成
+$client = new Client();
+
+//アシストランキングのHTMLを取得
+$crawler_assist_ranking_all = $client->request('GET', J1_ASSIST_RANKING);
+
+$temp_assist_ranking = array();
+
+//ランキングの取得
+$crawler_assist_ranking_all->filter('.halfbox td')->each(function($node) use(&$temp_assist_ranking)
+{
+        if($node->text() !== NULL && $node->text() != ""){
+            //echo (string)$node->text() . "<br />";
+            //var_dump($node->text());
+            $temp_assist_ranking[] =(string)$node->text();
+        }
+            
+});
+
+//ランキングの格納
+for($i = 0;  $i < count($temp_assist_ranking); $i++){
+    if($i  < count($temp_assist_ranking) / 2 ){
+        if(preg_match('/^[0-9]+位/', $temp_assist_ranking[$i])){
+        //ゴール順位を発見した場合、配列から情報を抜き出す
+        $j1_goal_ranking[$i][] = array_slice($temp_assist_ranking, $i, 4);
+        }
+    }
+    else{
+        if(preg_match('/^[0-9]+位/', $temp_assist_ranking[$i])){
+        //アシスト順位を発見した場合、配列から情報を抜き出す
+        $j1_assist_ranking[$i][] = array_slice($temp_assist_ranking, $i, 4);
+        }
+    }
+}
+
+//添え字を振り直す
+$j1_goal_ranking = array_values($j1_goal_ranking);
+$j1_assist_ranking = array_values($j1_assist_ranking);
+
+var_dump($j1_goal_ranking[9]);
+var_dump($j1_assist_ranking[9]);
+
 /*出場停止情報**/
-//J1得点ランキング情報取得URL
 define('J1_SUSPENSION', 'http://www.jsgoal.jp/suspension/j1.html');
 
 ?>
